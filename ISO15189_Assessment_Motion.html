@@ -13744,7 +13744,16 @@ if (typeof module !== 'undefined' && module.exports) {
     else if(e.intent==='primary.release'){
       dispatch('pointerup',pointerTarget,curX,curY);
       if(e.phase==='click'&&pointerTarget){
-        if(pointerTarget.click){try{pointerTarget.click();}catch(_){}}status.textContent='คลิกแล้ว ✓';
+        /* GE1u (2026-07-21, user รายงานเครื่องจริง "จีบเลือกจุดในภาพ hotspot ไม่ได้"): native .click()
+           ยิง MouseEvent ที่ clientX/clientY = 0 เสมอ (ตามสเปก ไม่ใช่บั๊กเบราว์เซอร์) — ปุ่ม/label/checkbox
+           ไม่สนใจพิกัดเลยไม่มีปัญหา แต่ .hotspot-wrap เป็นจุดเดียวในทั้งไฟล์ที่ handler อ่าน e.clientX/clientY
+           จริง (คำนวณ % ตำแหน่งบนภาพ) → ได้ (0,0) เสมอ หมุดเลยตกผิดที่ทุกครั้ง ไม่ใช่ตรงจุดที่จีบจริง
+           แก้เฉพาะ target นี้: dispatch('click',...) ผ่าน dispatch() เดิม (PointerEvent มี clientX/clientY
+           ตามพิกัดจริง) แทน .click() — path เดิมของปุ่ม/checkbox/label อื่นไม่แตะเลย (risk ต่ำ) */
+        const hsWrap=pointerTarget.closest&&pointerTarget.closest('.hotspot-wrap');
+        if(hsWrap){dispatch('click',hsWrap,curX,curY);}
+        else if(pointerTarget.click){try{pointerTarget.click();}catch(_){}}
+        status.textContent='คลิกแล้ว ✓';
       }else if(e.phase!=='click'){status.textContent='วางแล้ว ✓';}
       pointerTarget=null;
     }
